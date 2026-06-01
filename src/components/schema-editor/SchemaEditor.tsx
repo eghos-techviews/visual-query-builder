@@ -38,20 +38,28 @@ export function SchemaEditor() {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-3">
+    <div className="flex flex-col">
+      {/* sidebar header */}
+      <div className="px-5 py-4 border-b border-[var(--border)]">
+        <p className="text-[10px] uppercase tracking-widest font-semibold text-[var(--muted-foreground)] mb-1">Data Source</p>
+        <h2 className="text-sm font-bold text-[var(--foreground)]">Schema Fields</h2>
+        <p className="text-[11px] text-[var(--muted-foreground)] mt-0.5">{schema.length} fields defined</p>
+      </div>
+
+      <div className="p-5 flex flex-col gap-4">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)] w-full"
+        className="flex items-center gap-2 text-xs font-semibold text-[var(--muted-foreground)] uppercase tracking-wider w-full hover:text-[var(--foreground)] transition-colors"
       >
-        {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-        Schema Fields
-        <span className="ml-auto text-xs text-[var(--muted-foreground)] font-normal">{schema.length} fields</span>
+        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+        Fields
+        <span className="ml-auto font-normal normal-case tracking-normal">{schema.length}</span>
       </button>
 
       {open && (
         <div className="flex flex-col gap-2">
           {schema.map((field) => (
-            <div key={field.name} className="flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2 bg-[var(--background)]">
+            <div key={field.name} className="flex items-center gap-2 rounded-lg border border-[var(--border)] px-3 py-2.5 bg-[var(--background)]">
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{field.label}</p>
                 <p className="text-xs text-[var(--muted-foreground)] truncate">{field.name}</p>
@@ -121,6 +129,7 @@ export function SchemaEditor() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -2,24 +2,12 @@
 
 import { memo, useState } from "react";
 import { ChevronDown, ChevronRight, Plus, Layers, Trash2, GripVertical } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GroupNode as GroupNodeType, QueryNode, FieldSchema } from "@/lib/query-tree/types";
+import { GroupNode as GroupNodeType, QueryNode, FieldSchema, ValidationError } from "@/lib/query-tree/types";
 import { useQueryStore } from "@/store/query-store";
 import { RuleNode } from "./RuleNode";
-import { ValidationError } from "@/lib/query-tree/types";
 
 type Props = {
   group: GroupNodeType;
@@ -29,163 +17,132 @@ type Props = {
   isRoot?: boolean;
 };
 
-// depth → background tint cycling
-const DEPTH_STYLES = [
-  "bg-[var(--group-0)]",
-  "bg-[var(--group-1)]",
-  "bg-[var(--group-2)]",
-  "bg-[var(--group-3)]",
+const DEPTH_COLORS = [
+  { border: "#6b3a1f", badge: "bg-[#6b3a1f]/10 text-[#6b3a1f] border-[#6b3a1f]/30 hover:bg-[#6b3a1f]/20 dark:bg-[#c9965a]/10 dark:text-[#c9965a] dark:border-[#c9965a]/30" },
+  { border: "#d97706", badge: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800" },
+  { border: "#059669", badge: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800" },
+  { border: "#7c3aed", badge: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800" },
 ];
 
-export const GroupNode = memo(function GroupNode({
-  group,
-  schema,
-  errors,
-  depth = 0,
-  isRoot = false,
-}: Props) {
+export const GroupNode = memo(function GroupNode({ group, schema, errors, depth = 0, isRoot = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
-  const addRule = useQueryStore((s) => s.addRule);
-  const addGroup = useQueryStore((s) => s.addGroup);
-  const removeNode = useQueryStore((s) => s.removeNode);
-  const toggleLogic = useQueryStore((s) => s.toggleLogic);
+  const addRule         = useQueryStore((s) => s.addRule);
+  const addGroup        = useQueryStore((s) => s.addGroup);
+  const removeNode      = useQueryStore((s) => s.removeNode);
+  const toggleLogic     = useQueryStore((s) => s.toggleLogic);
   const reorderChildren = useQueryStore((s) => s.reorderChildren);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-
-  const bgClass = DEPTH_STYLES[depth % DEPTH_STYLES.length];
-  const hasError = errors.some((e) => e.nodeId === group.id);
+  const sensors    = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const color      = DEPTH_COLORS[depth % DEPTH_COLORS.length];
+  const hasError   = errors.some((e) => e.nodeId === group.id);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id, disabled: isRoot });
 
-  const style = isRoot ? {} : {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
-  };
+  const sortableStyle = isRoot
+    ? {}
+    : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 };
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const ids = group.children.map((c) => c.id);
+    const ids  = group.children.map((c) => c.id);
     const from = ids.indexOf(String(active.id));
     const to   = ids.indexOf(String(over.id));
     if (from !== -1 && to !== -1) reorderChildren(group.id, from, to);
   }
 
   return (
-    <div
-      ref={!isRoot ? setNodeRef : undefined}
-      style={style}
-      className={`rounded-xl border border-[var(--border)] ${bgClass} transition-all
-        ${hasError ? "border-red-400" : ""}
-        ${depth > 0 ? "ml-4" : ""}
-      `}
-    >
-      {/* group header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border)]">
-        {/* drag handle for nested groups */}
-        {!isRoot && (
-          <button
-            {...attributes}
-            {...listeners}
-            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] cursor-grab active:cursor-grabbing touch-none"
-            tabIndex={-1}
-          >
-            <GripVertical size={14} />
+    <div ref={!isRoot ? setNodeRef : undefined} style={sortableStyle} className={depth > 0 ? "ml-8 mt-1" : ""}>
+      <div
+        className={`rounded-xl border bg-[var(--card)] overflow-hidden transition-shadow
+          ${hasError ? "border-red-300 dark:border-red-800 shadow-sm shadow-red-50" : "border-[var(--border)] shadow-sm"}`}
+        style={{ borderLeftColor: color.border, borderLeftWidth: "4px" }}
+      >
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--muted)]/30">
+
+          {!isRoot && (
+            <button {...attributes} {...listeners} tabIndex={-1}
+              className="text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab active:cursor-grabbing touch-none shrink-0">
+              <GripVertical size={14} />
+            </button>
+          )}
+
+          <button onClick={() => setCollapsed((v) => !v)}
+            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors shrink-0">
+            {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
           </button>
-        )}
 
-        {/* collapse toggle */}
-        <button
-          onClick={() => setCollapsed((v) => !v)}
-          className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors"
-        >
-          {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
-        </button>
-
-        {/* logic dropdown */}
-        <select
-          value={group.logic}
-          onChange={() => toggleLogic(group.id)}
-          className="text-xs font-bold px-2 py-0.5 rounded-md border border-[var(--border)]
-            bg-[var(--secondary)] text-[var(--secondary-foreground)] cursor-pointer outline-none"
-        >
-          <option value="AND">AND</option>
-          <option value="OR">OR</option>
-        </select>
-
-        <span className="text-xs text-[var(--muted-foreground)] flex-1">
-          {group.children.length === 0
-            ? "empty group"
-            : `${group.children.length} condition${group.children.length !== 1 ? "s" : ""}`}
-        </span>
-
-        {/* add rule */}
-        <button
-          onClick={() => addRule(group.id)}
-          className="flex items-center gap-1 text-xs text-[var(--primary)] hover:text-[var(--foreground)]
-            transition-colors font-medium px-2 py-1 rounded-md hover:bg-[var(--muted)]"
-          title="Add rule"
-        >
-          <Plus size={13} /> rule
-        </button>
-
-        {/* add group */}
-        <button
-          onClick={() => addGroup(group.id)}
-          className="flex items-center gap-1 text-xs text-[var(--primary)] hover:text-[var(--foreground)]
-            transition-colors font-medium px-2 py-1 rounded-md hover:bg-[var(--muted)]"
-          title="Add nested group"
-        >
-          <Layers size={13} /> group
-        </button>
-
-        {/* remove group (not root) */}
-        {!isRoot && (
+          {/* AND / OR — click to toggle */}
           <button
-            onClick={() => removeNode(group.id)}
-            className="text-[var(--muted-foreground)] hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-950/20"
-            title="Remove group"
+            onClick={() => toggleLogic(group.id)}
+            className={`text-xs font-bold px-3 py-1 rounded-md border transition-colors shrink-0 ${color.badge}`}
           >
-            <Trash2 size={13} />
+            {group.logic}
           </button>
+
+          <span className="text-xs text-[var(--muted-foreground)] flex-1 min-w-0 truncate">
+            {collapsed
+              ? `${group.children.length} condition${group.children.length !== 1 ? "s" : ""} hidden`
+              : group.children.length === 0
+                ? "no conditions yet"
+                : `${group.children.length} condition${group.children.length !== 1 ? "s" : ""}`}
+          </span>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => addRule(group.id)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg
+                border border-[var(--border)] text-[var(--muted-foreground)]
+                hover:text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
+              <Plus size={12} /> Rule
+            </button>
+            <button onClick={() => addGroup(group.id)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg
+                border border-[var(--border)] text-[var(--muted-foreground)]
+                hover:text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
+              <Layers size={12} /> Group
+            </button>
+            {!isRoot && (
+              <button onClick={() => removeNode(group.id)}
+                className="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ── Children ── */}
+        {!collapsed && (
+          <div className="p-4 flex flex-col gap-3">
+            {group.children.length === 0 ? (
+              <div className="py-8 flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-[var(--border)] flex items-center justify-center">
+                  <Plus size={16} className="opacity-40" />
+                </div>
+                <p className="text-xs">This group is empty</p>
+                <button onClick={() => addRule(group.id)}
+                  className="text-xs font-medium text-[var(--primary)] hover:underline">
+                  + Add first rule
+                </button>
+              </div>
+            ) : (
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={group.children.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                  {group.children.map((child) =>
+                    child.type === "rule" ? (
+                      <RuleNode key={child.id} rule={child} schema={schema} errors={errors} />
+                    ) : (
+                      <GroupNode key={child.id} group={child as GroupNodeType}
+                        schema={schema} errors={errors} depth={depth + 1} />
+                    )
+                  )}
+                </SortableContext>
+              </DndContext>
+            )}
+          </div>
         )}
       </div>
-
-      {/* children */}
-      {!collapsed && (
-        <div className="p-3 flex flex-col gap-2">
-          {group.children.length === 0 ? (
-            <p className="text-xs text-[var(--muted-foreground)] italic px-2">
-              No conditions yet — add a rule or group above.
-            </p>
-          ) : (
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={group.children.map((c) => c.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {group.children.map((child) =>
-                  child.type === "rule" ? (
-                    <RuleNode key={child.id} rule={child} schema={schema} errors={errors} />
-                  ) : (
-                    // Recursive — GroupNode renders GroupNode
-                    <GroupNode
-                      key={child.id}
-                      group={child as GroupNodeType}
-                      schema={schema}
-                      errors={errors}
-                      depth={depth + 1}
-                    />
-                  )
-                )}
-              </SortableContext>
-            </DndContext>
-          )}
-        </div>
-      )}
     </div>
   );
 });
