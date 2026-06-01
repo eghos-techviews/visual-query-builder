@@ -12,6 +12,7 @@ import { QueryPreview } from "@/components/query-preview/QueryPreview";
 import { ResultsTable } from "@/components/query-preview/ResultsTable";
 import { QueryHistory } from "./QueryHistory";
 import { TreeStats } from "./TreeStats";
+import { QueryPresets } from "./QueryPresets";
 
 export function QueryBuilder() {
   const root       = useQueryStore((s) => s.root);
@@ -103,6 +104,7 @@ export function QueryBuilder() {
           <Save size={13} /> {saveMsg || "Save"}
         </button>
 
+        <QueryPresets />
         <QueryHistory />
 
         <button onClick={() => exportQueryJSON(root)}
