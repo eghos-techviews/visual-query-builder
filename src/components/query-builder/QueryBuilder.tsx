@@ -11,6 +11,7 @@ import { GroupNode } from "./GroupNode";
 import { QueryPreview } from "@/components/query-preview/QueryPreview";
 import { ResultsTable } from "@/components/query-preview/ResultsTable";
 import { QueryHistory } from "./QueryHistory";
+import { TreeStats } from "./TreeStats";
 
 export function QueryBuilder() {
   const root       = useQueryStore((s) => s.root);
@@ -120,6 +121,8 @@ export function QueryBuilder() {
         {errors.length > 0 && (
           <span className="text-xs text-red-500 ml-1">{errors.length} error{errors.length > 1 ? "s" : ""}</span>
         )}
+
+        <TreeStats root={root} />
 
         <span className="ml-auto text-xs text-[var(--muted-foreground)] hidden sm:block">
           ⌘↵ run · ⌘Z undo · ⌘⇧Z redo
