@@ -61,7 +61,7 @@ export function QueryBuilder() {
     <div className="flex flex-col gap-4 h-full">
 
       {/* ── Toolbar ── */}
-      <div className="flex items-center gap-2 flex-wrap bg-[var(--card)] border border-[var(--border)] rounded-xl px-3 py-2 shadow-sm">
+      <div className="flex items-center gap-2 flex-wrap bg-[var(--card)] border border-[var(--border)] rounded-xl px-5 py-3.5 shadow-sm mb-2">
 
         <button onClick={run} disabled={errors.length > 0}
           className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)]
@@ -116,7 +116,7 @@ export function QueryBuilder() {
 function ToolBtn({ children, onClick, title }: { children: React.ReactNode; onClick?: () => void; title?: string }) {
   return (
     <button onClick={onClick} title={title}
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-[var(--muted-foreground)]
+      className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs text-[var(--muted-foreground)]
         hover:text-[var(--foreground)] hover:bg-[var(--muted)] transition-colors font-medium">
       {children}
     </button>

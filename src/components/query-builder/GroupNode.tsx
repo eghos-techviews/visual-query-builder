@@ -17,112 +17,114 @@ type Props = {
   isRoot?: boolean;
 };
 
-// Left border accent colour per nesting depth
-const DEPTH_ACCENT = ["var(--depth-0)", "var(--depth-1)", "var(--depth-2)", "var(--depth-3)"];
-
-// Logic badge colours
-const LOGIC_STYLE: Record<string, string> = {
-  AND: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800",
-  OR:  "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800",
-};
+const DEPTH_COLORS = [
+  { border: "#6b3a1f", badge: "bg-[#6b3a1f]/10 text-[#6b3a1f] border-[#6b3a1f]/30 hover:bg-[#6b3a1f]/20 dark:bg-[#c9965a]/10 dark:text-[#c9965a] dark:border-[#c9965a]/30" },
+  { border: "#d97706", badge: "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800" },
+  { border: "#059669", badge: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800" },
+  { border: "#7c3aed", badge: "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100 dark:bg-violet-950/30 dark:text-violet-400 dark:border-violet-800" },
+];
 
 export const GroupNode = memo(function GroupNode({ group, schema, errors, depth = 0, isRoot = false }: Props) {
   const [collapsed, setCollapsed] = useState(false);
-  const addRule        = useQueryStore((s) => s.addRule);
-  const addGroup       = useQueryStore((s) => s.addGroup);
-  const removeNode     = useQueryStore((s) => s.removeNode);
-  const toggleLogic    = useQueryStore((s) => s.toggleLogic);
+  const addRule         = useQueryStore((s) => s.addRule);
+  const addGroup        = useQueryStore((s) => s.addGroup);
+  const removeNode      = useQueryStore((s) => s.removeNode);
+  const toggleLogic     = useQueryStore((s) => s.toggleLogic);
   const reorderChildren = useQueryStore((s) => s.reorderChildren);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-  const accentColor = DEPTH_ACCENT[depth % DEPTH_ACCENT.length];
-  const hasError = errors.some((e) => e.nodeId === group.id);
+  const sensors    = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const color      = DEPTH_COLORS[depth % DEPTH_COLORS.length];
+  const hasError   = errors.some((e) => e.nodeId === group.id);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: group.id, disabled: isRoot });
 
-  const style = isRoot ? {} : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 };
+  const sortableStyle = isRoot
+    ? {}
+    : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.35 : 1 };
 
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
+  function handleDragEnd(e: DragEndEvent) {
+    const { active, over } = e;
     if (!over || active.id === over.id) return;
-    const ids = group.children.map((c) => c.id);
+    const ids  = group.children.map((c) => c.id);
     const from = ids.indexOf(String(active.id));
     const to   = ids.indexOf(String(over.id));
     if (from !== -1 && to !== -1) reorderChildren(group.id, from, to);
   }
 
   return (
-    <div ref={!isRoot ? setNodeRef : undefined} style={style} className={depth > 0 ? "ml-6" : ""}>
+    <div ref={!isRoot ? setNodeRef : undefined} style={sortableStyle} className={depth > 0 ? "ml-8 mt-1" : ""}>
       <div
-        className={`rounded-xl border bg-[var(--card)] overflow-hidden shadow-sm transition-all
-          ${hasError ? "border-red-300 dark:border-red-800" : "border-[var(--border)]"}`}
-        style={{ borderLeftColor: accentColor, borderLeftWidth: "3px" }}
+        className={`rounded-xl border bg-[var(--card)] overflow-hidden transition-shadow
+          ${hasError ? "border-red-300 dark:border-red-800 shadow-sm shadow-red-50" : "border-[var(--border)] shadow-sm"}`}
+        style={{ borderLeftColor: color.border, borderLeftWidth: "4px" }}
       >
-        {/* ── Group header ── */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--muted)]/50 border-b border-[var(--border)]">
+        {/* ── Header ── */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--muted)]/30">
 
-          {/* drag handle for nested groups */}
           {!isRoot && (
-            <button {...attributes} {...listeners}
-              className="text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab active:cursor-grabbing touch-none"
-              tabIndex={-1}><GripVertical size={13} /></button>
+            <button {...attributes} {...listeners} tabIndex={-1}
+              className="text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab active:cursor-grabbing touch-none shrink-0">
+              <GripVertical size={14} />
+            </button>
           )}
 
-          {/* collapse */}
           <button onClick={() => setCollapsed((v) => !v)}
-            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors">
-            {collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            className="text-[var(--muted-foreground)] hover:text-[var(--foreground)] transition-colors shrink-0">
+            {collapsed ? <ChevronRight size={15} /> : <ChevronDown size={15} />}
           </button>
 
-          {/* AND / OR toggle */}
+          {/* AND / OR — click to toggle */}
           <button
             onClick={() => toggleLogic(group.id)}
-            className={`text-xs font-bold px-2.5 py-1 rounded-md border transition-colors ${LOGIC_STYLE[group.logic]}`}
+            className={`text-xs font-bold px-3 py-1 rounded-md border transition-colors shrink-0 ${color.badge}`}
           >
             {group.logic}
           </button>
 
-          <span className="text-xs text-[var(--muted-foreground)] flex-1">
+          <span className="text-xs text-[var(--muted-foreground)] flex-1 min-w-0 truncate">
             {collapsed
-              ? `${group.children.length} condition${group.children.length !== 1 ? "s" : ""} (collapsed)`
+              ? `${group.children.length} condition${group.children.length !== 1 ? "s" : ""} hidden`
               : group.children.length === 0
-                ? "empty — add a rule below"
+                ? "no conditions yet"
                 : `${group.children.length} condition${group.children.length !== 1 ? "s" : ""}`}
           </span>
 
-          {/* add rule */}
-          <button onClick={() => addRule(group.id)}
-            className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md border border-[var(--border)]
-              text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors">
-            <Plus size={12} /> Rule
-          </button>
-
-          {/* add group */}
-          <button onClick={() => addGroup(group.id)}
-            className="flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md border border-[var(--border)]
-              text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] transition-colors">
-            <Layers size={12} /> Group
-          </button>
-
-          {/* remove (not root) */}
-          {!isRoot && (
-            <button onClick={() => removeNode(group.id)}
-              className="p-1.5 rounded-md text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
-              <Trash2 size={13} />
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => addRule(group.id)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg
+                border border-[var(--border)] text-[var(--muted-foreground)]
+                hover:text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
+              <Plus size={12} /> Rule
             </button>
-          )}
+            <button onClick={() => addGroup(group.id)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg
+                border border-[var(--border)] text-[var(--muted-foreground)]
+                hover:text-[var(--foreground)] hover:bg-[var(--card)] hover:border-[var(--accent)] transition-colors">
+              <Layers size={12} /> Group
+            </button>
+            {!isRoot && (
+              <button onClick={() => removeNode(group.id)}
+                className="p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors">
+                <Trash2 size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* ── Children ── */}
         {!collapsed && (
-          <div className="p-3 flex flex-col gap-2">
+          <div className="p-4 flex flex-col gap-3">
             {group.children.length === 0 ? (
-              <div className="py-6 flex flex-col items-center gap-2 text-[var(--muted-foreground)]">
-                <Layers size={22} className="opacity-30" />
-                <p className="text-xs">No conditions yet</p>
+              <div className="py-8 flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
+                <div className="w-10 h-10 rounded-full border-2 border-dashed border-[var(--border)] flex items-center justify-center">
+                  <Plus size={16} className="opacity-40" />
+                </div>
+                <p className="text-xs">This group is empty</p>
                 <button onClick={() => addRule(group.id)}
-                  className="text-xs text-[var(--primary)] hover:underline font-medium">+ add your first rule</button>
+                  className="text-xs font-medium text-[var(--primary)] hover:underline">
+                  + Add first rule
+                </button>
               </div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -131,8 +133,8 @@ export const GroupNode = memo(function GroupNode({ group, schema, errors, depth 
                     child.type === "rule" ? (
                       <RuleNode key={child.id} rule={child} schema={schema} errors={errors} />
                     ) : (
-                      <GroupNode key={child.id} group={child as GroupNodeType} schema={schema}
-                        errors={errors} depth={depth + 1} />
+                      <GroupNode key={child.id} group={child as GroupNodeType}
+                        schema={schema} errors={errors} depth={depth + 1} />
                     )
                   )}
                 </SortableContext>
