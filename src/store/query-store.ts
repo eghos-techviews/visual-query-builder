@@ -26,6 +26,7 @@ type QueryState = {
   toggleLogic: (groupId: string) => void;
   reorderChildren: (groupId: string, fromIndex: number, toIndex: number) => void;
   resetTree: () => void;
+  importTree: (tree: GroupNode) => void;
 
   // Schema mutations
   addField: (field: FieldSchema) => void;
@@ -62,6 +63,7 @@ export const useQueryStore = create<QueryState>()(
         set((s) => ({ root: reorderChildren(s.root, groupId, from, to) })),
 
       resetTree: () => set({ root: makeRootGroup() }),
+      importTree: (tree) => set({ root: tree }),
 
       addField: (field) =>
         set((s) => ({ schema: [...s.schema, field] })),
