@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // suppress hydration mismatches from browser extensions
+  reactStrictMode: true,
 };
 
 export default nextConfig;
