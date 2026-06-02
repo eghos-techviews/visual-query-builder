@@ -12,8 +12,7 @@ export function makeGroup(logic: "AND" | "OR" = "AND"): GroupNode {
 }
 
 export function makeRootGroup(): GroupNode {
-  const rule = makeRule("name");
-  return { id: "root", type: "group", logic: "AND", children: [rule] };
+  return { id: "root", type: "group", logic: "AND", children: [] };
 }
 
 // ─── Recursive Helpers ────────────────────────────────────────────────────────

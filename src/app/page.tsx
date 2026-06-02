@@ -1,54 +1,46 @@
 import { QueryBuilder } from "@/components/query-builder/QueryBuilder";
-import { QueryPreview } from "@/components/query-preview/QueryPreview";
 import { SchemaEditor } from "@/components/schema-editor/SchemaEditor";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 export default function Home() {
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-[var(--background)]">
+    /* outer page — subtle background with top padding */
+    <div className="min-h-screen bg-[#e8eaf0] dark:bg-[#0f1117] flex flex-col p-5">
 
-      {/* ── Header ── */}
-      <header className="flex items-center justify-between px-8 py-4 border-b border-[var(--border)] bg-[var(--card)] shrink-0 shadow-sm">
-        <div className="flex items-center gap-3.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-[11px] font-bold shrink-0 shadow-sm"
-            style={{ background: "var(--primary)", color: "var(--primary-foreground)" }}>
-            VQ
+      {/* ── The entire app lives inside this one container ── */}
+      <div className="flex-1 w-full rounded-2xl border border-white/60 dark:border-gray-700 bg-white dark:bg-[#1a1d27] shadow-xl overflow-hidden flex flex-col"
+        style={{ minHeight: "calc(100vh - 40px)" }}>
+
+        {/* Header */}
+        <header className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#141720] shrink-0">
+          <div className="flex items-center gap-3">
+            {/* SVG Logo — cleaner than VQ */}
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" className="shrink-0">
+              <rect width="32" height="32" rx="6" fill="#2563eb"/>
+              <path d="M8 10L16 22L24 10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div>
+              <h1 className="text-sm font-bold text-gray-900 dark:text-gray-100 leading-tight">Visual Query Builder</h1>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 leading-tight">Build queries visually</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-[var(--foreground)] leading-snug tracking-tight">Visual Query Builder</h1>
-            <p className="text-[11px] text-[var(--muted-foreground)] leading-snug">build queries visually — no syntax needed</p>
-          </div>
+          <ThemeToggle />
+        </header>
+
+        {/* Body — sidebar + content side by side */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Sidebar — always visible, clean border on the right */}
+          <aside className="w-56 shrink-0 border-r border-gray-100 dark:border-gray-800 bg-white dark:bg-[#141720] overflow-y-auto">
+            <SchemaEditor />
+          </aside>
+
+          {/* Main — scrollable content area */}
+          <main className="flex-1 overflow-y-auto bg-[#f7f8fa] dark:bg-[#0f1117] p-6">
+            <QueryBuilder />
+          </main>
+
         </div>
-
-        <div className="hidden md:flex items-center gap-5 text-[11px] text-[var(--muted-foreground)]">
-          <span>∞ nesting depth</span>
-          <span className="opacity-30">|</span>
-          <span>live SQL + Mongo preview</span>
-          <span className="opacity-30">|</span>
-          <span>schema-driven rendering</span>
-        </div>
-
-        <ThemeToggle />
-      </header>
-
-      {/* ── 3-panel body ── */}
-      <div className="flex flex-1 overflow-hidden gap-5 p-5 px-6">
-
-        {/* Schema sidebar — card with rounded corners and gap from edges */}
-        <aside className="w-60 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-y-auto shrink-0 hidden lg:block shadow-sm">
-          <SchemaEditor />
-        </aside>
-
-        {/* Main builder — breathing room all around */}
-        <main className="flex-1 overflow-y-auto min-w-0 rounded-xl">
-          <QueryBuilder />
-        </main>
-
-        {/* Preview sidebar — card with rounded corners */}
-        <aside className="w-80 rounded-xl border border-[var(--border)] bg-[var(--card)] overflow-hidden shrink-0 hidden xl:flex flex-col shadow-sm">
-          <QueryPreview />
-        </aside>
-
       </div>
     </div>
   );
