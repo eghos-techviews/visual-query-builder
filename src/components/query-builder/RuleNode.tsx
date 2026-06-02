@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { GripVertical, Trash2 } from "lucide-react";
+import { GripVertical, X } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -15,105 +15,86 @@ type Props = { rule: RuleNodeType; schema: FieldSchema[]; errors: ValidationErro
 export const RuleNode = memo(function RuleNode({ rule, schema, errors }: Props) {
   const updateRule = useQueryStore((s) => s.updateRule);
   const removeNode = useQueryStore((s) => s.removeNode);
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: rule.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rule.id });
 
   const field      = schema.find((f) => f.name === rule.field);
   const allowedOps = field ? OPERATORS_BY_TYPE[field.type] : [];
   const opDef      = OPERATOR_DEFS[rule.operator];
   const error      = errors.find((e) => e.nodeId === rule.id);
 
-  function handleFieldChange(newField: string) {
-    const s = schema.find((f) => f.name === newField);
+  function handleFieldChange(v: string) {
+    const s = schema.find((f) => f.name === v);
     if (!s) return;
-    updateRule(rule.id, { field: newField, operator: OPERATORS_BY_TYPE[s.type][0], value: "" });
+    updateRule(rule.id, { field: v, operator: OPERATORS_BY_TYPE[s.type][0], value: "" });
   }
-
   function handleOperatorChange(op: OperatorId) {
     updateRule(rule.id, { operator: op, value: OPERATOR_DEFS[op].noValue ? null : "" });
   }
 
+  const inputCls = "text-sm bg-[var(--input)] border border-[var(--border)] rounded-lg px-3 py-2 outline-none focus:border-[var(--primary)] transition-colors w-full";
+
   return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
-    >
-      <div className={`flex items-stretch rounded-lg border bg-[var(--card)] overflow-hidden transition-all group
-        ${error ? "border-red-300 dark:border-red-800" : "border-[var(--border)] hover:border-[var(--accent)]"}`}
-      >
-        {/* drag */}
+    <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
+      <div className={`flex items-end gap-3 px-4 py-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all group hover:border-[var(--primary)]/50 hover:shadow-md`}>
+
         <button {...attributes} {...listeners} tabIndex={-1}
-          className="w-8 flex items-center justify-center shrink-0 text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab active:cursor-grabbing touch-none border-r border-[var(--border)] bg-[var(--muted)]/30 hover:bg-[var(--muted)] transition-colors">
-          <GripVertical size={13} />
+          className="mb-2 text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab touch-none shrink-0">
+          <GripVertical size={14} />
         </button>
 
-        {/* field */}
-        <div className="w-36 shrink-0 border-r border-[var(--border)] px-4 py-3 flex flex-col gap-1">
-          <span className="text-[9px] uppercase tracking-widest font-semibold text-[var(--muted-foreground)]">Field</span>
-          <select value={rule.field} onChange={(e) => handleFieldChange(e.target.value)}
-            className="bg-transparent text-sm font-medium text-[var(--foreground)] cursor-pointer outline-none">
+        {/* Field */}
+        <div className="flex flex-col gap-1.5 min-w-[130px]">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Field</label>
+          <select value={rule.field} onChange={(e) => handleFieldChange(e.target.value)} className={inputCls + " cursor-pointer"}>
             {schema.map((f) => <option key={f.name} value={f.name}>{f.label}</option>)}
           </select>
         </div>
 
-        {/* operator */}
-        <div className="w-44 shrink-0 border-r border-[var(--border)] px-4 py-3 flex flex-col gap-1">
-          <span className="text-[9px] uppercase tracking-widest font-semibold text-[var(--muted-foreground)]">Operator</span>
-          <select value={rule.operator} onChange={(e) => handleOperatorChange(e.target.value as OperatorId)}
-            className="bg-transparent text-sm text-[var(--foreground)] cursor-pointer outline-none">
+        {/* Operator */}
+        <div className="flex flex-col gap-1.5 min-w-[150px]">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Operator</label>
+          <select value={rule.operator} onChange={(e) => handleOperatorChange(e.target.value as OperatorId)} className={inputCls + " cursor-pointer"}>
             {allowedOps.map((op) => <option key={op} value={op}>{OPERATOR_DEFS[op].label}</option>)}
           </select>
         </div>
 
-        {/* value */}
-        <div className="flex-1 px-4 py-3 flex flex-col gap-1 min-w-0">
-          <span className="text-[9px] uppercase tracking-widest font-semibold text-[var(--muted-foreground)]">Value</span>
+        {/* Value */}
+        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Value</label>
           {opDef?.noValue ? (
-            <span className="text-sm text-[var(--muted-foreground)] italic">no value needed</span>
+            <div className={inputCls + " text-[var(--muted-foreground)] italic"}>Not required</div>
           ) : opDef?.rangeValue ? (
-            <div className="flex items-center gap-3">
-              <input type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"}
-                placeholder="from"
+            <div className="flex items-center gap-2">
+              <input type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"} placeholder="From"
                 value={Array.isArray(rule.value) ? String(rule.value[0]) : ""}
-                onChange={(e) => { const c = Array.isArray(rule.value) ? rule.value : ["", ""]; updateRule(rule.id, { value: [e.target.value, c[1]] }); }}
-                className="bg-transparent outline-none text-sm w-28 border-b border-[var(--border)] focus:border-[var(--accent)] pb-0.5 transition-colors placeholder:text-[var(--border)]" />
-              <span className="text-xs text-[var(--muted-foreground)] shrink-0">to</span>
-              <input type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"}
-                placeholder="to"
+                onChange={(e) => { const c = Array.isArray(rule.value) ? rule.value : ["",""]; updateRule(rule.id, { value: [e.target.value, c[1]] }); }}
+                className={inputCls + " placeholder:text-[var(--border)]"} />
+              <span className="text-[var(--muted-foreground)] shrink-0 text-sm">to</span>
+              <input type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"} placeholder="To"
                 value={Array.isArray(rule.value) ? String(rule.value[1]) : ""}
-                onChange={(e) => { const c = Array.isArray(rule.value) ? rule.value : ["", ""]; updateRule(rule.id, { value: [c[0], e.target.value] }); }}
-                className="bg-transparent outline-none text-sm w-28 border-b border-[var(--border)] focus:border-[var(--accent)] pb-0.5 transition-colors placeholder:text-[var(--border)]" />
+                onChange={(e) => { const c = Array.isArray(rule.value) ? rule.value : ["",""]; updateRule(rule.id, { value: [c[0], e.target.value] }); }}
+                className={inputCls + " placeholder:text-[var(--border)]"} />
             </div>
           ) : field?.type === "enum" ? (
-            <select value={String(rule.value ?? "")} onChange={(e) => updateRule(rule.id, { value: e.target.value })}
-              className="bg-transparent text-sm text-[var(--foreground)] cursor-pointer outline-none">
-              <option value="">select…</option>
+            <select value={String(rule.value ?? "")} onChange={(e) => updateRule(rule.id, { value: e.target.value })} className={inputCls + " cursor-pointer"}>
+              <option value="">Select a value…</option>
               {field.enumValues?.map((v) => <option key={v} value={v}>{v}</option>)}
             </select>
           ) : (
-            <input
-              type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"}
-              placeholder="enter a value…"
+            <input type={field?.type === "number" ? "number" : field?.type === "date" ? "date" : "text"}
+              placeholder="Enter value…"
               value={rule.value === null ? "" : String(rule.value)}
               onChange={(e) => updateRule(rule.id, { value: field?.type === "number" ? Number(e.target.value) : e.target.value })}
-              className="bg-transparent outline-none text-sm border-b border-transparent focus:border-[var(--accent)] pb-0.5 transition-colors placeholder:text-[var(--border)] w-full"
-            />
+              className={inputCls + " placeholder:text-[var(--border)]"} />
           )}
         </div>
 
-        {/* delete */}
-        <div className="w-12 shrink-0 flex items-center justify-center border-l border-[var(--border)]">
-          <button onClick={() => removeNode(rule.id)}
-            className="p-2 rounded-md text-[var(--border)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors opacity-0 group-hover:opacity-100">
-            <Trash2 size={14} />
-          </button>
-        </div>
+        <button onClick={() => removeNode(rule.id)}
+          className="mb-2 p-1.5 rounded-lg text-[var(--muted-foreground)] hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+          <X size={14} />
+        </button>
       </div>
-
-      {error && (
-        <p className="text-[11px] text-red-500 mt-1 ml-4">{error.message}</p>
-      )}
+      {error && <p className="text-[11px] text-red-500 mt-1.5 ml-4">{error.message}</p>}
     </div>
   );
 });
