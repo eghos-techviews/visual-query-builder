@@ -69,6 +69,25 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
 
   const outputCode = outputTab === "sql" ? sql : outputTab === "mongo" ? mongo : gql;
 
+  // Two example values per field — lets users know what's actually in the dataset
+  const sampleValues = useMemo(() => {
+    const data = activeConfig.getData();
+    const map: Record<string, string[]> = {};
+    schema.forEach((field) => {
+      const seen = new Set<string>();
+      const vals: string[] = [];
+      for (const row of data) {
+        const v = row[field.name];
+        if (v == null || v === "") continue;
+        const str = String(v);
+        if (!seen.has(str)) { seen.add(str); vals.push(str); }
+        if (vals.length >= 2) break;
+      }
+      map[field.name] = vals;
+    });
+    return map;
+  }, [activeConfig, schema]);
+
 
   // Load presets on mount
   useEffect(() => {
@@ -100,7 +119,7 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
   }, [root, activeConfig]);
 
   const handleRunQuery = useCallback(() => {
-    if (errors.length > 0) return;
+    if (errors.length > 0) return; // only blocks on real rule errors, not empty root
     setIsRunning(true);
     setTimeout(() => {
       const data = activeConfig.getData();
@@ -164,10 +183,13 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
 
           {/* Left: Logo + breadcrumb + schema picker */}
           <div className="flex items-center gap-2.5">
-            <Link href="/" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-              <svg width="26" height="26" viewBox="0 0 32 32" fill="none">
-                <rect width="32" height="32" rx="6" fill="#3b82f6" />
-                <path d="M8 10L16 22L24 10" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+            <Link href="/" className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors" title="Back to ViewsQ home">
+              <svg width="24" height="24" viewBox="0 0 32 32" fill="none">
+                <rect width="32" height="32" rx="7" fill="#2563eb"/>
+                <rect x="7" y="9" width="18" height="2.5" rx="1.25" fill="white"/>
+                <rect x="9" y="14.5" width="14" height="2.5" rx="1.25" fill="white" fillOpacity="0.8"/>
+                <rect x="12" y="20" width="8" height="2.5" rx="1.25" fill="white" fillOpacity="0.6"/>
+                <rect x="14.5" y="25.5" width="3" height="2.5" rx="1.25" fill="white" fillOpacity="0.4"/>
               </svg>
             </Link>
             <ChevronRight size={14} className="text-gray-300 dark:text-gray-600" />
@@ -211,20 +233,14 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
           {/* Right: actions */}
           <div className="flex items-center gap-2">
             {errors.length > 0 && (
-              <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium px-2 py-1 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                <AlertTriangle size={12} />
-                {errors.length} issue{errors.length !== 1 ? "s" : ""}
+              <span
+                title={`Fix before running:\n${errors.map((e) => `• ${e.message}`).join("\n")}`}
+                className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800/50 cursor-help"
+              >
+                <AlertTriangle size={11} />
+                {errors.length} issue{errors.length !== 1 ? "s" : ""} — hover to see
               </span>
             )}
-            <button
-              onClick={handleRunQuery}
-              disabled={isRunning || errors.length > 0}
-              title="Run Query (⌘↵)"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm rounded-lg transition-colors"
-            >
-              <Play size={13} className={isRunning ? "animate-pulse" : ""} />
-              {isRunning ? "Running…" : "Run Query"}
-            </button>
             <ThemeToggle />
           </div>
         </div>
@@ -234,20 +250,29 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
       <div className="flex flex-1 overflow-hidden">
 
         {/* ── LEFT: Schema fields + Presets ── */}
-        <aside className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d27] flex flex-col overflow-hidden">
+        <aside className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#13161f] flex flex-col overflow-hidden">
 
           {/* Fields */}
-          <div className="flex-1 overflow-y-auto p-3">
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2 px-1">
-              Fields
-            </p>
-            <div className="space-y-0.5">
+          <div className="flex-1 overflow-y-auto">
+            <div className="px-3 pt-3 pb-1">
+              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                Fields
+              </p>
+            </div>
+            <div className="px-2 pb-2">
               {schema.map((field) => (
                 <div
                   key={field.name}
-                  className="flex items-center justify-between px-2.5 py-1.5 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors cursor-default"
+                  className="flex items-start justify-between px-2 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-default"
                 >
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{field.label}</span>
+                  <div className="min-w-0 flex-1 mr-1.5">
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300 block truncate">{field.label}</span>
+                    {sampleValues[field.name]?.length > 0 && (
+                      <span className="text-[9.5px] text-gray-400 dark:text-gray-500 block truncate leading-tight mt-0.5">
+                        {sampleValues[field.name].join(" · ")}
+                      </span>
+                    )}
+                  </div>
                   <TypeBadge type={field.type} />
                 </div>
               ))}
@@ -324,18 +349,30 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
 
             <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-1" />
 
-            <ToolbarBtn onClick={() => exportQueryJSON(root)} icon={<Download size={13} />} label="Export" />
-            <ToolbarBtn onClick={() => fileInputRef.current?.click()} icon={<Upload size={13} />} label="Import" />
+            <ToolbarBtn onClick={() => exportQueryJSON(root)} icon={<Upload size={13} />} label="Export" title="Export query tree as JSON" />
+            <ToolbarBtn onClick={() => fileInputRef.current?.click()} icon={<Download size={13} />} label="Import" title="Import a query tree JSON file (use toolbar Export to create one)" />
             <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
 
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1.5">
               <ShortcutsHelp />
+              <div className="w-px h-4 bg-gray-200 dark:bg-gray-700" />
+              <button
+                onClick={handleRunQuery}
+                disabled={isRunning || errors.length > 0}
+                title="Run Query (⌘↵)"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition-colors"
+              >
+                <Play size={11} fill="currentColor" />
+                {isRunning ? "Running…" : "Run"}
+              </button>
             </div>
           </div>
 
-          {/* Query Builder */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="bg-white dark:bg-[#1a1d27] rounded-xl border border-gray-200 dark:border-gray-800">
+          {/* Content area — query builder takes natural height, results fills the rest */}
+          <div className="flex-1 flex flex-col min-h-0 p-4 gap-4">
+
+            {/* Query Builder — natural height, no flex growth */}
+            <div className="shrink-0 bg-white dark:bg-[#1a1d27] rounded-xl border border-gray-200 dark:border-gray-800">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Query Builder</h2>
                 <span className="text-xs text-gray-400 dark:text-gray-500">
@@ -345,70 +382,76 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
               <div className="p-4">
                 <GroupNode group={root} schema={schema} errors={errors} isRoot depth={0} />
               </div>
+              {countRules(root) === 0 && (
+                <p className="px-4 pb-3 text-xs text-gray-400 dark:text-gray-500 text-center">
+                  No conditions — Run Query to return all records
+                </p>
+              )}
             </div>
-          </div>
 
-          {/* Results Panel */}
-          {showResults && (
-            <div className="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d27] animate-slide-up" style={{ height: "280px" }}>
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results</span>
-                  <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
-                    {results.length} record{results.length !== 1 ? "s" : ""}
-                  </span>
+            {/* Results — flex-1 so it stretches to the bottom of the viewport */}
+            {showResults && (
+              <div className="flex-1 flex flex-col min-h-0 bg-white dark:bg-[#1a1d27] rounded-xl border border-gray-200 dark:border-gray-800 animate-slide-up">
+                <div className="shrink-0 flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results</span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-full">
+                      {results.length} record{results.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setShowResults(false)}
+                    className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <ChevronDown size={15} />
+                  </button>
                 </div>
+                <div className="flex-1 min-h-0 overflow-hidden">
+                  <ResultsTable
+                    results={results}
+                    onExport={(data) => {
+                      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `results-${Date.now()}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Collapsed results hint */}
+            {!showResults && results.length > 0 && (
+              <div className="shrink-0 bg-white dark:bg-[#1a1d27] rounded-xl border border-gray-200 dark:border-gray-800">
                 <button
-                  onClick={() => setShowResults(false)}
-                  className="p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  onClick={() => setShowResults(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
                 >
-                  <ChevronDown size={15} />
+                  <ChevronUp size={13} />
+                  Show {results.length} result{results.length !== 1 ? "s" : ""}
                 </button>
               </div>
-              <div className="h-[calc(100%-44px)] overflow-hidden">
-                <ResultsTable
-                  results={results}
-                  onExport={(data) => {
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `results-${Date.now()}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                />
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* Collapsed results hint */}
-          {!showResults && results.length > 0 && (
-            <div className="shrink-0 border-t border-gray-200 dark:border-gray-800">
-              <button
-                onClick={() => setShowResults(true)}
-                className="w-full flex items-center justify-center gap-2 py-2 text-xs text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              >
-                <ChevronUp size={13} />
-                Show {results.length} result{results.length !== 1 ? "s" : ""}
-              </button>
-            </div>
-          )}
+          </div>
         </main>
 
         {/* ── RIGHT: Tabbed output ── */}
-        <aside className="w-80 shrink-0 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d27] flex flex-col">
+        <aside className="w-[300px] shrink-0 border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-[#13161f] flex flex-col">
 
           {/* Tab bar */}
-          <div className="flex items-center border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <div className="flex items-center border-b border-gray-100 dark:border-gray-800 shrink-0 px-1 pt-1 gap-0.5">
             {(["sql", "mongo", "gql"] as OutputTab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setOutputTab(tab)}
-                className={`flex-1 py-2.5 text-[11px] font-semibold uppercase tracking-wide transition-colors border-b-2 ${
+                className={`px-3 py-2 text-[11px] font-semibold rounded-t-lg transition-colors ${
                   outputTab === tab
-                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    ? "bg-gray-50 dark:bg-[#0d1117] text-blue-600 dark:text-blue-400 border border-b-0 border-gray-200 dark:border-gray-700"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >
                 {tab === "gql" ? "GraphQL" : tab === "mongo" ? "MongoDB" : "SQL"}
@@ -416,30 +459,37 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
             ))}
           </div>
 
-          {/* Output */}
-          <div className="flex-1 overflow-auto p-4">
-            <pre className="text-[11px] font-mono leading-relaxed whitespace-pre-wrap break-words text-purple-500 dark:text-purple-300">
+          {/* Code output — theme-aware */}
+          <div className="flex-1 overflow-auto bg-gray-50 dark:bg-[#0d1117] relative">
+            <div className="absolute top-2 right-2">
+              <button
+                onClick={handleCopyOutput}
+                className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 bg-white dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-transparent transition-colors"
+              >
+                {copied ? <Check size={10} className="text-green-500 dark:text-green-400" /> : <Copy size={10} />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+            <pre className="p-4 pt-3 text-[11.5px] font-mono leading-[1.7] whitespace-pre-wrap break-words text-gray-700 dark:text-[#c9d1d9]">
               {outputCode}
             </pre>
           </div>
 
-          {/* Copy + status footer */}
-          <div className="shrink-0 p-3 border-t border-gray-100 dark:border-gray-800 space-y-2">
-            {showResults && (
-              <div className="flex items-center gap-2 px-2 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-lg">
+          {/* Footer */}
+          <div className="shrink-0 px-3 py-2.5 border-t border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            {showResults ? (
+              <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
                 <span className="text-xs text-green-700 dark:text-green-400 font-medium">
                   {results.length} record{results.length !== 1 ? "s" : ""} matched
                 </span>
               </div>
+            ) : (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                {activeConfig.label}
+              </span>
             )}
-            <button
-              onClick={handleCopyOutput}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg transition-colors"
-            >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              {copied ? "Copied!" : `Copy ${outputTab === "gql" ? "GraphQL" : outputTab.toUpperCase()}`}
-            </button>
+            <Code2 size={13} className="text-gray-300 dark:text-gray-600" />
           </div>
         </aside>
       </div>

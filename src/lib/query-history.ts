@@ -55,8 +55,12 @@ export function importQueryJSON(file: File): Promise<GroupNode> {
       try {
         const parsed = JSON.parse(e.target?.result as string);
         // basic sanity check
+        if (Array.isArray(parsed)) {
+          reject(new Error('This looks like a results export (data rows). Use the toolbar "Export" button to export your query, then import that file.'));
+          return;
+        }
         if (parsed.type !== "group" || !Array.isArray(parsed.children)) {
-          reject(new Error("Invalid query file — expected a group node at the root."));
+          reject(new Error("Invalid query file — use the toolbar Export button to create a compatible file."));
           return;
         }
         resolve(parsed as GroupNode);

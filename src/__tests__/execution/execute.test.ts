@@ -17,7 +17,7 @@ describe("executeQuery", () => {
       children: [{ id: "r1", type: "rule", field: "age", operator: "gt", value: 18 }],
     };
     const results = executeQuery(tree, MOCK_DATA);
-    expect(results.every((r) => r.age > 18)).toBe(true);
+    expect(results.every((r) => (r.age as number) > 18)).toBe(true);
   });
 
   it("filters by status equals active", () => {
@@ -38,7 +38,7 @@ describe("executeQuery", () => {
       ],
     };
     const results = executeQuery(tree, MOCK_DATA);
-    expect(results.every((r) => r.age > 18 && r.country === "Nigeria")).toBe(true);
+    expect(results.every((r) => (r.age as number) > 18 && r.country === "Nigeria")).toBe(true);
   });
 
   it("applies OR logic — status = active OR status = pending", () => {
@@ -68,7 +68,7 @@ describe("executeQuery", () => {
       ],
     };
     const results = executeQuery(tree, MOCK_DATA);
-    expect(results.every((r) => r.age > 18 && (r.country === "Nigeria" || r.country === "Ghana"))).toBe(true);
+    expect(results.every((r) => (r.age as number) > 18 && (r.country === "Nigeria" || r.country === "Ghana"))).toBe(true);
   });
 
   it("filters isVerified = true with is_true operator", () => {

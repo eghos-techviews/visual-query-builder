@@ -3,6 +3,25 @@
 import { ChevronDown, Download } from "lucide-react";
 import { useState, useMemo } from "react";
 
+function downloadCSV(data: DataRecord[], columns: string[], filename: string) {
+  const header = columns.map((c) => `"${formatColumnLabel(c)}"`).join(",");
+  const rows = data.map((row) =>
+    columns.map((col) => {
+      const v = row[col];
+      if (v === null || v === undefined) return "";
+      return `"${String(v).replace(/"/g, '""')}"`;
+    }).join(",")
+  );
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 type DataRecord = Record<string, unknown>;
 
 interface ResultsTableProps {
@@ -73,13 +92,24 @@ export function ResultsTable({ results, isLoading = false, onExport }: ResultsTa
           {results.length} record{results.length !== 1 ? "s" : ""}
         </p>
         {onExport && (
-          <button
-            onClick={() => onExport(results)}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
-          >
-            <Download size={12} />
-            Export
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => downloadCSV(sortedResults, columns, `results-${Date.now()}.csv`)}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+              title="Download as CSV (opens in Excel)"
+            >
+              <Download size={11} />
+              CSV
+            </button>
+            <button
+              onClick={() => onExport(sortedResults)}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+              title="Download as JSON"
+            >
+              <Download size={11} />
+              JSON
+            </button>
+          </div>
         )}
       </div>
 

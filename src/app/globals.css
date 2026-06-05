@@ -73,19 +73,24 @@
   --code-fg: #e2e8f0;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* Wrap the reset inside @layer base so that @layer utilities (Tailwind's mx-auto,
+   px-*, etc.) take precedence — unlayered rules otherwise beat everything in layers */
+@layer base {
+  html { scroll-behavior: smooth; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), system-ui, sans-serif;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 }
-
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
 
 /* ── Animations ─────────────────────────────────────────────────────────────── */
 

@@ -16,7 +16,7 @@ function tree(children: GroupNode["children"], logic: "AND" | "OR" = "AND"): Gro
   return { id: "root", type: "group", logic, children };
 }
 function rule(id: string, field: string, operator: string, value: unknown) {
-  return { id, type: "rule" as const, field, operator: operator as never, value };
+  return { id, type: "rule" as const, field, operator, value } as import("@/lib/query-tree/types").RuleNode;
 }
 
 describe("executeQuery — string operators", () => {

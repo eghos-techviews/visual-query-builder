@@ -2,7 +2,8 @@ import { GroupNode, QueryNode, RuleNode, ValidationError, FieldSchema, OPERATORS
 
 export function validateTree(root: GroupNode, schema: FieldSchema[]): ValidationError[] {
   const errors: ValidationError[] = [];
-  validateNode(root, schema, errors);
+  // Root being empty is not an error — it just means "no filter" (return all records)
+  root.children.forEach((c) => validateNode(c, schema, errors));
   return errors;
 }
 

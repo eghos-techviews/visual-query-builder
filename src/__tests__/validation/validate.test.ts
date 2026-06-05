@@ -17,8 +17,16 @@ describe("validateTree", () => {
     expect(validateTree(tree, schema)).toHaveLength(0);
   });
 
-  it("flags an empty group", () => {
+  it("does not flag an empty root (returns all records instead)", () => {
     const tree: GroupNode = { id: "root", type: "group", logic: "AND", children: [] };
+    expect(validateTree(tree, schema)).toHaveLength(0);
+  });
+
+  it("flags an empty nested group", () => {
+    const tree: GroupNode = {
+      id: "root", type: "group", logic: "AND",
+      children: [{ id: "g1", type: "group", logic: "OR", children: [] }],
+    };
     const errors = validateTree(tree, schema);
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].message).toMatch(/empty/i);

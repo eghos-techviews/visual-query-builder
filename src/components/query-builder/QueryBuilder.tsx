@@ -25,7 +25,7 @@ export function QueryBuilder() {
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const allData = useMemo(() => getAllUsers(), []);
+  const allData = useMemo(() => getAllUsers() as unknown as Record<string, unknown>[], []);
   const errors = useMemo(() => validateTree(root, schema), [root, schema]);
   const results = useMemo(() => executeQuery(root, allData), [root, allData]);
   const sql = useMemo(() => generateSQL(root), [root]);
@@ -194,7 +194,6 @@ export function QueryBuilder() {
         <ResultsTable
           results={results}
           isLoading={false}
-          queryApplied={true}
           onExport={(data) => {
             const json = JSON.stringify(data, null, 2);
             const blob = new Blob([json], { type: "application/json" });
