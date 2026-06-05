@@ -42,12 +42,12 @@ export const GroupNode = memo(function GroupNode({ group, schema, errors, depth 
   return (
     <div ref={!isRoot ? setNodeRef : undefined} style={style} className={depth > 0 ? "ml-8" : ""}>
       <div
-        className={`rounded-xl border bg-[var(--card)] overflow-hidden shadow-sm transition-all
+        className={`rounded-lg border bg-[var(--card)] overflow-hidden shadow-sm transition-all
           ${hasError ? "border-red-300" : "border-[var(--border)]"}`}
-        style={{ borderLeftColor: accentColor, borderLeftWidth: "4px" }}
+        style={{ borderLeftColor: accentColor, borderLeftWidth: "3px" }}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-[var(--panel)] border-b border-[var(--border)]">
+        <div className="flex items-center gap-2 px-4 py-2 bg-[var(--panel)] border-b border-[var(--border)]">
           {!isRoot && (
             <button {...attributes} {...listeners} tabIndex={-1}
               className="text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab touch-none shrink-0">
@@ -78,14 +78,14 @@ export const GroupNode = memo(function GroupNode({ group, schema, errors, depth 
               : `${group.children.length} condition${group.children.length !== 1 ? "s" : ""}`}
           </span>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={() => addRule(group.id)}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
-              <Plus size={12} /> Add Rule
+              className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
+              <Plus size={12} /> Rule
             </button>
             <button onClick={() => addGroup(group.id)}
-              className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
-              <Layers size={12} /> Add Group
+              className="flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--primary)] hover:border-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all">
+              <Layers size={12} /> Group
             </button>
             {!isRoot && (
               <button onClick={() => removeNode(group.id)}
@@ -98,15 +98,12 @@ export const GroupNode = memo(function GroupNode({ group, schema, errors, depth 
 
         {/* Children */}
         {!collapsed && (
-          <div className="p-4 flex flex-col gap-3">
+          <div className="p-3 flex flex-col gap-2">
             {group.children.length === 0 ? (
-              <div className="py-10 flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
-                <div className="w-12 h-12 rounded-full border-2 border-dashed border-[var(--border)] flex items-center justify-center">
-                  <Plus size={18} className="opacity-40" />
-                </div>
-                <p className="text-sm">This group has no conditions</p>
+              <div className="py-4 flex flex-col items-center gap-2 text-[var(--muted-foreground)]">
+                <p className="text-xs">No conditions yet</p>
                 <button onClick={() => addRule(group.id)}
-                  className="text-xs font-semibold text-[var(--primary)] hover:underline">
+                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                   + Add first rule
                 </button>
               </div>

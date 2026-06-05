@@ -31,11 +31,11 @@ export const RuleNode = memo(function RuleNode({ rule, schema, errors }: Props) 
     updateRule(rule.id, { operator: op, value: OPERATOR_DEFS[op].noValue ? null : "" });
   }
 
-  const inputCls = "text-sm bg-[var(--input)] border border-[var(--border)] rounded-lg px-3 py-2 outline-none focus:border-[var(--primary)] transition-colors w-full";
+  const inputCls = "text-xs bg-[var(--input)] border border-[var(--border)] rounded px-2.5 py-1.5 outline-none focus:border-[var(--primary)] transition-colors w-full";
 
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
-      <div className={`flex items-end gap-3 px-4 py-4 rounded-xl border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all group hover:border-[var(--primary)]/50 hover:shadow-md`}>
+      <div className={`flex items-end gap-2 px-3 py-3 rounded-lg border border-[var(--border)] bg-[var(--card)] shadow-sm transition-all group hover:border-[var(--primary)]/50 hover:shadow-md`}>
 
         <button {...attributes} {...listeners} tabIndex={-1}
           className="mb-2 text-[var(--border)] hover:text-[var(--muted-foreground)] cursor-grab touch-none shrink-0">
@@ -43,24 +43,24 @@ export const RuleNode = memo(function RuleNode({ rule, schema, errors }: Props) 
         </button>
 
         {/* Field */}
-        <div className="flex flex-col gap-1.5 min-w-[130px]">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Field</label>
+        <div className="flex flex-col gap-1 min-w-[120px]">
+          <label className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Field</label>
           <select value={rule.field} onChange={(e) => handleFieldChange(e.target.value)} className={inputCls + " cursor-pointer"}>
             {schema.map((f) => <option key={f.name} value={f.name}>{f.label}</option>)}
           </select>
         </div>
 
         {/* Operator */}
-        <div className="flex flex-col gap-1.5 min-w-[150px]">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Operator</label>
+        <div className="flex flex-col gap-1 min-w-[140px]">
+          <label className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Operator</label>
           <select value={rule.operator} onChange={(e) => handleOperatorChange(e.target.value as OperatorId)} className={inputCls + " cursor-pointer"}>
             {allowedOps.map((op) => <option key={op} value={op}>{OPERATOR_DEFS[op].label}</option>)}
           </select>
         </div>
 
         {/* Value */}
-        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted-foreground)]">Value</label>
+        <div className="flex flex-col gap-1 flex-1 min-w-0">
+          <label className="text-[9px] font-bold uppercase tracking-wider text-[var(--muted-foreground)]">Value</label>
           {opDef?.noValue ? (
             <div className={inputCls + " text-[var(--muted-foreground)] italic"}>Not required</div>
           ) : opDef?.rangeValue ? (

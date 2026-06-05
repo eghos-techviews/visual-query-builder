@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Visual Query Builder",
-  description: "Build complex database queries visually — no syntax required",
+  title: "ViewsQ – Visual Query Builder",
+  description: "Drag-and-drop query builder that generates SQL, MongoDB, and GraphQL in real time.",
 };
 
 export default function RootLayout({
