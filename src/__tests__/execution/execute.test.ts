@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { executeQuery } from "@/lib/execution/execute";
-import { MOCK_DATA } from "@/lib/mock-data";
+import { executeQuery } from "@/lib/query-engine/executor";
+import { MOCK_USERS } from "@/lib/mock-data";
 import { GroupNode } from "@/lib/query-tree/types";
+
+const MOCK_DATA = MOCK_USERS as unknown as Record<string, unknown>[];
 
 describe("executeQuery", () => {
   it("returns all records when root group is empty", () => {
@@ -69,13 +71,13 @@ describe("executeQuery", () => {
     expect(results.every((r) => r.age > 18 && (r.country === "Nigeria" || r.country === "Ghana"))).toBe(true);
   });
 
-  it("filters verified = true with is_true operator", () => {
+  it("filters isVerified = true with is_true operator", () => {
     const tree: GroupNode = {
       id: "root", type: "group", logic: "AND",
-      children: [{ id: "r1", type: "rule", field: "verified", operator: "is_true", value: null }],
+      children: [{ id: "r1", type: "rule", field: "isVerified", operator: "is_true", value: null }],
     };
     const results = executeQuery(tree, MOCK_DATA);
-    expect(results.every((r) => r.verified === true)).toBe(true);
+    expect(results.every((r) => r.isVerified === true)).toBe(true);
   });
 
   it("returns empty array when no records match", () => {

@@ -13,9 +13,7 @@ import {
 import { GroupNode } from "@/lib/query-tree/types";
 
 function makeTestTree(): GroupNode {
-  const root = makeRootGroup();
-  // root has one child rule by default
-  return root;
+  return addRule(makeRootGroup(), "root", "name");
 }
 
 describe("addRule", () => {
