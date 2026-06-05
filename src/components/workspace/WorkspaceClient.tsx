@@ -26,11 +26,13 @@ import Link from "next/link";
 
 interface WorkspaceClientProps {
   workspaceId: string;
+  initialSchemaId?: string;
+  workspaceName?: string;
 }
 
 type OutputTab = "sql" | "mongo" | "gql";
 
-export function WorkspaceClient({ workspaceId }: WorkspaceClientProps) {
+export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = "Workspace" }: WorkspaceClientProps) {
   const root           = useQueryStore((s) => s.root);
   const schema         = useQueryStore((s) => s.schema);
   const activeSchemaId = useQueryStore((s) => s.activeSchemaId);
@@ -49,6 +51,15 @@ export function WorkspaceClient({ workspaceId }: WorkspaceClientProps) {
   const fileInputRef  = useRef<HTMLInputElement>(null);
   const schemaDropRef = useRef<HTMLDivElement>(null);
 
+  // Auto-select schema when navigating to a schema-specific workspace URL
+  useEffect(() => {
+    if (initialSchemaId && initialSchemaId !== activeSchemaId) {
+      switchSchema(initialSchemaId);
+    }
+  // Only run on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const activeConfig = useMemo(() => getSchemaConfig(activeSchemaId), [activeSchemaId]);
   const errors       = useMemo(() => validateTree(root, schema), [root, schema]);
   const sql          = useMemo(() => generateSQL(root, activeConfig.tableName), [root, activeConfig]);
@@ -57,7 +68,6 @@ export function WorkspaceClient({ workspaceId }: WorkspaceClientProps) {
 
   const outputCode = outputTab === "sql" ? sql : outputTab === "mongo" ? mongo : gql;
 
-  const workspaceName = workspaceId === "users-qa" ? "User Testing" : "Workspace";
 
   // Load presets on mount
   useEffect(() => {
