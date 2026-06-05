@@ -60,10 +60,10 @@ function nodeToSQL(node: QueryNode, depth = 0): string {
   return node.type === "rule" ? ruleToSQL(node) : groupToSQL(node as GroupNode, depth);
 }
 
-export function generateSQL(root: GroupNode): string {
+export function generateSQL(root: GroupNode, tableName = "table"): string {
   const where = groupToSQL(root, 0);
-  if (!where) return "SELECT * FROM table";
-  return `SELECT *\nFROM table\nWHERE ${where}`;
+  if (!where) return `SELECT * FROM ${tableName}`;
+  return `SELECT *\nFROM ${tableName}\nWHERE ${where}`;
 }
 
 // ─── MongoDB Generator ────────────────────────────────────────────────────────

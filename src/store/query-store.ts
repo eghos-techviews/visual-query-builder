@@ -11,12 +11,14 @@ import {
   makeRootGroup,
 } from "@/lib/query-tree/operations";
 import { DEFAULT_SCHEMA } from "@/lib/schema/default-schema";
+import { getSchemaConfig } from "@/lib/schema/schemas";
 
 // ─── Store Shape ──────────────────────────────────────────────────────────────
 
 type QueryState = {
   root: GroupNode;
   schema: FieldSchema[];
+  activeSchemaId: string;
 
   // Query tree mutations
   addRule: (parentId: string) => void;
@@ -28,7 +30,7 @@ type QueryState = {
   resetTree: () => void;
   importTree: (tree: GroupNode) => void;
 
-  // Schema mutations
+  // Schema mutations (setSchema is a standalone fn — see switchSchema below)
   addField: (field: FieldSchema) => void;
   removeField: (fieldName: string) => void;
   updateField: (fieldName: string, patch: Partial<FieldSchema>) => void;
@@ -41,6 +43,7 @@ export const useQueryStore = create<QueryState>()(
     (set, get) => ({
       root: makeRootGroup(),
       schema: DEFAULT_SCHEMA,
+      activeSchemaId: "users",
 
       addRule: (parentId) => {
         const firstField = get().schema[0]?.name ?? "field";
@@ -83,3 +86,10 @@ export const useQueryStore = create<QueryState>()(
 );
 
 // Use useQueryStore.temporal.getState().undo() / .redo() to navigate history
+
+// Schema switching is structural (not undoable) — clears undo history on switch
+export function switchSchema(schemaId: string) {
+  const config = getSchemaConfig(schemaId);
+  useQueryStore.setState({ activeSchemaId: schemaId, schema: config.schema, root: makeRootGroup() });
+  useQueryStore.temporal.getState().clear();
+}

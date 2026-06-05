@@ -100,13 +100,10 @@ export const GroupNode = memo(function GroupNode({ group, schema, errors, depth 
         {!collapsed && (
           <div className="p-4 flex flex-col gap-3">
             {group.children.length === 0 ? (
-              <div className="py-10 flex flex-col items-center gap-3 text-[var(--muted-foreground)]">
-                <div className="w-12 h-12 rounded-full border-2 border-dashed border-[var(--border)] flex items-center justify-center">
-                  <Plus size={18} className="opacity-40" />
-                </div>
-                <p className="text-sm">This group has no conditions</p>
+              <div className="py-4 flex flex-col items-center gap-2 text-[var(--muted-foreground)]">
+                <p className="text-xs">No conditions yet</p>
                 <button onClick={() => addRule(group.id)}
-                  className="text-xs font-semibold text-[var(--primary)] hover:underline">
+                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                   + Add first rule
                 </button>
               </div>
