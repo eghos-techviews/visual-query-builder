@@ -1,125 +1,118 @@
 # Visual Query Builder
 
-A web app that lets you build complex database queries visually — no syntax required. Think Supabase filters or Postman query builder, but with deeply nestable logic groups, live query preview, and a simulated execution engine.
+A schema-aware, visual query builder that generates **SQL**, **MongoDB**, and **GraphQL** (Hasura-style) filter output in real time. Built with Next.js, Zustand, and dnd-kit.
 
-Live demo: _coming soon (Vercel)_
+## Features
 
----
+| Feature | Details |
+|---|---|
+| Recursive condition groups | Unlimited nesting of AND/OR groups |
+| Schema-driven rendering | Fields, operators, and value inputs adapt to field type |
+| Live query output | SQL · MongoDB · GraphQL updated on every keystroke |
+| Query execution | Runs against mock datasets, shows results in a sortable table |
+| Drag and drop | Reorder rules and groups with dnd-kit |
+| Undo / Redo | Full undo history via Zustand + zundo temporal middleware |
+| Query history | Save, reload, and delete named queries (localStorage) |
+| Export / Import | Download query trees as JSON, re-import from file |
+| Dark mode | System preference detected, manually toggleable |
+| Keyboard shortcuts | `⌘↵` run · `⌘Z` undo · `⌘⇧Z` redo · `?` shortcuts modal |
+| Validation | Inline errors per rule (empty value, wrong operator for type) |
 
-## What it does
+## Schemas
 
-- Build filter conditions visually with field / operator / value chips
-- Nest groups inside groups — unlimited depth, AND/OR logic per group
-- Edit the schema on the fly — add or remove fields, the UI adapts
-- See SQL and MongoDB query output update in real time as you build
-- Run the query against a mock dataset and inspect matching results
-- Drag and drop to reorder rules and groups
-- Undo any change, collapse groups, export/import queries as JSON
-- Dark and light mode
+Four mock datasets, each with 20 records:
 
----
+- **Jobs** — Job listings (title, salary, type, level, remote, status)
+- **Companies** — Employer profiles (industry, size, rating, verified)
+- **Applicants** — Candidate profiles (experience, skills, status, source)
+- **Users** — User accounts (age, country, status, isVerified)
 
-## Architecture
+## Tech Stack
 
-### Query tree
+- **Next.js 16** (App Router, TypeScript)
+- **Zustand 5** + **zundo** — state management with temporal undo/redo
+- **dnd-kit** — drag-and-drop condition reordering
+- **Tailwind CSS 4** — styling
+- **Vitest** — unit tests
 
-Everything is a recursive tree of two node types:
-
-```ts
-type RuleNode  = { id, type: "rule",  field, operator, value }
-type GroupNode = { id, type: "group", logic: "AND"|"OR", children: QueryNode[] }
-type QueryNode = RuleNode | GroupNode
-```
-
-The root is always a `GroupNode`. Groups can contain rules or other groups — that's where the unlimited nesting comes from. TypeScript's discriminated union on `type` means you never need to cast: `if (node.type === "group")` gives you `GroupNode` automatically.
-
-### Recursive rendering strategy
-
-`GroupNode.tsx` renders its `children` array. When a child is itself a group, it renders another `GroupNode` — so the component calls itself. This is the core recursive pattern. Depth is tracked as a prop to apply visual tinting at each nesting level.
-
-```
-<GroupNode depth={0}>        ← root, cream background
-  <RuleNode />
-  <GroupNode depth={1}>      ← nested, slightly darker tint
-    <RuleNode />
-    <GroupNode depth={2}>    ← deeper still
-      ...
-    </GroupNode>
-  </GroupNode>
-</GroupNode>
-```
-
-### State management
-
-Zustand store is intentionally thin — it holds the tree and calls pure functions from `lib/query-tree/operations.ts`. Those functions take a tree and return a new tree (immutable). The store just does `set({ root: addRule(state.root, parentId) })`.
-
-This separation means all the tree logic is testable without React or Zustand. `zundo` middleware wraps the store for undo/redo without any manual snapshot management.
-
-### Query generation
-
-`lib/query-tree/generators.ts` walks the tree recursively and produces SQL-like or MongoDB-style output. Pure function — takes a `GroupNode`, returns a string. Zero side effects, easy to test.
-
-### Validation engine
-
-`lib/validation/validate.ts` walks the tree and returns a flat array of `{ nodeId, message }` errors. Components look up their own node id in that array to show inline errors. Run Query is disabled while errors exist.
-
-### Performance
-
-- All tree operations are immutable — React only re-renders components whose props actually changed
-- `memo()` on `RuleNode` and `GroupNode` — a deep change doesn't re-render the whole tree
-- SQL/Mongo output computed with `useMemo` — only recalculates when root changes
-- `useTransition` on query execution — keeps the UI responsive while filtering
-
----
-
-## Folder structure
-
-```
-src/
-├── app/                      # Next.js App Router
-├── components/
-│   ├── query-builder/        # GroupNode, RuleNode, QueryBuilder orchestrator
-│   ├── query-preview/        # SQL/Mongo preview, results table
-│   ├── schema-editor/        # Editable field list
-│   └── ui/                   # Shadcn + ThemeToggle
-├── lib/
-│   ├── query-tree/           # types, operations (pure), generators
-│   ├── schema/               # default schema
-│   ├── validation/           # validation engine
-│   └── execution/            # mock data filter engine
-└── store/
-    └── query-store.ts        # Zustand + zundo
-```
-
----
-
-## Trade-offs
-
-- **Flat errors array vs inline state** — validation errors live outside the tree (flat array keyed by nodeId) rather than embedded in each node. Simpler to compute and clear, but requires a lookup per component render.
-- **Mock dataset is hardcoded** — intentional. The execution engine is schema-agnostic so wiring up a real API endpoint is straightforward.
-- **No URL persistence** — query state lives in memory. Export/import JSON covers the save use case without needing URL serialization.
-
----
-
-## Running locally
+## Getting Started
 
 ```bash
 npm install
-npm run dev
+npm run dev        # http://localhost:3000
+npm test           # run 89 unit tests
+npm run build      # production build
 ```
 
-Tests:
+## Project Structure
 
-```bash
-npm test
+```
+src/
+├── app/
+│   ├── page.tsx                    # Landing page
+│   └── workspace/[id]/page.tsx     # Workspace route
+├── components/
+│   ├── query-builder/
+│   │   ├── GroupNode.tsx           # Recursive group with DnD context
+│   │   └── RuleNode.tsx            # Single rule row (field/operator/value)
+│   ├── results/
+│   │   └── ResultsTable.tsx        # Sortable results table with skeleton
+│   └── workspace/
+│       ├── WorkspaceClient.tsx     # 3-column workspace layout
+│       └── ShortcutsHelp.tsx       # Keyboard shortcuts popover
+├── lib/
+│   ├── mock-data/                  # Jobs, Companies, Applicants, Users datasets
+│   ├── query-engine/
+│   │   └── executor.ts             # Generic query executor (DataRecord[])
+│   ├── query-history.ts            # Save/load/export/import query trees
+│   ├── query-tree/
+│   │   ├── generators.ts           # SQL · MongoDB · GraphQL generators
+│   │   ├── operations.ts           # Immutable tree mutations
+│   │   ├── selectors.ts            # Tree introspection helpers
+│   │   └── types.ts                # GroupNode · RuleNode · FieldSchema · operators
+│   ├── schema/
+│   │   ├── default-schema.ts       # User schema definition
+│   │   └── schemas.ts              # SchemaRegistry + getSchemaConfig()
+│   └── validation/
+│       └── validate.ts             # Per-rule validation (field type + operator + value)
+└── store/
+    └── query-store.ts              # Zustand store + switchSchema()
 ```
 
----
+## Architecture Notes
 
-## Tech stack
+**Schema registry pattern** — `SchemaConfig` maps an ID to a `FieldSchema[]` and a `getData()` function. Switching schemas via `switchSchema()` is a structural operation outside the undo stack; it clears temporal history so undo does not reach across schema boundaries.
 
-- Next.js 16 (App Router) + TypeScript
-- TailwindCSS + Shadcn/UI
-- Zustand + zundo (undo/redo)
-- DnD Kit (drag and drop)
-- Vitest + React Testing Library
+**Generic executor** — `executeQuery(root, DataRecord[])` is fully generic with no reference to any specific data model. Every rule operator maps to a predicate function; groups recurse with AND (`every`) or OR (`some`).
+
+**GraphQL output** — Uses a custom `gqlStringify()` serializer (no commas between array items, unquoted keys) to produce valid Hasura-style GraphQL argument syntax following the `{ _and: [...] }` / `{ field: { _eq: value } }` filter schema.
+
+**Undo/Redo** — `zundo` wraps the Zustand store. Only `root` and `schema` are tracked in the temporal snapshot. `switchSchema()` calls `temporal.getState().clear()` so history resets on schema change.
+
+## PR History
+
+| PR | Branch | Description |
+|---|---|---|
+| #9  | `feat/multi-schema`         | Multi-schema support — Jobs, Companies, Applicants datasets |
+| #10 | `feat/graphql-generator`    | GraphQL (Hasura-style) query generator + 12 tests |
+| #11 | `feat/workspace-rebuild`    | 3-column workspace with tabbed SQL/MongoDB/GraphQL output |
+| #12 | `feat/landing-page`         | Product landing page with schema quick-launch cards |
+| #13 | `feat/interactions-polish`  | Animated transitions, skeleton loader, keyboard shortcuts modal |
+| #14 | `feat/tests-readme`         | 29 new unit tests (89 total) + README |
+
+## Tests
+
+```
+src/__tests__/
+├── execution/
+│   ├── execute.test.ts             # Basic executor tests
+│   └── executor-advanced.test.ts   # String · numeric · boolean · nested logic (28 tests)
+├── query-tree/
+│   ├── generators.test.ts          # SQL · MongoDB · GraphQL (23 tests)
+│   ├── operations.test.ts          # Tree mutations (11 tests)
+│   └── selectors.test.ts           # Tree introspection (12 tests)
+├── schema/
+│   └── schemas.test.ts             # Schema registry + field types (12 tests)
+└── validation/
+    └── validate.test.ts            # Validation rules (7 tests)
+```
