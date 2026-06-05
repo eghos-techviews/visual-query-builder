@@ -38,8 +38,20 @@ export function ResultsTable({ results, isLoading = false, onExport }: ResultsTa
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+      <div className="flex flex-col h-full overflow-hidden">
+        <div className="px-5 py-2.5 border-b border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#141720] shrink-0">
+          <div className="skeleton h-3 w-20 rounded" />
+        </div>
+        <div className="flex-1 overflow-hidden p-4 space-y-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex gap-3">
+              <div className="skeleton h-7 flex-1 rounded" style={{ opacity: 1 - i * 0.12 }} />
+              <div className="skeleton h-7 w-24 rounded" style={{ opacity: 1 - i * 0.12 }} />
+              <div className="skeleton h-7 w-32 rounded" style={{ opacity: 1 - i * 0.12 }} />
+              <div className="skeleton h-7 w-20 rounded" style={{ opacity: 1 - i * 0.12 }} />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

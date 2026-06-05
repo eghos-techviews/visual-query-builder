@@ -9,6 +9,7 @@ import {
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { ResultsTable } from "@/components/results/ResultsTable";
 import { GroupNode } from "@/components/query-builder/GroupNode";
+import { ShortcutsHelp } from "@/components/workspace/ShortcutsHelp";
 import { useQueryStore, switchSchema } from "@/store/query-store";
 import { validateTree } from "@/lib/validation/validate";
 import { executeQuery } from "@/lib/query-engine/executor";
@@ -98,53 +99,52 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [root, activeConfig]);
 
-  function handleRunQuery() {
+  const handleRunQuery = useCallback(() => {
     if (errors.length > 0) return;
     setIsRunning(true);
-    // Simulate a brief async feel
     setTimeout(() => {
       const data = activeConfig.getData();
       setResults(executeQuery(root, data));
       setShowResults(true);
       setIsRunning(false);
     }, 120);
-  }
+  }, [errors.length, activeConfig, root]);
 
-  function handleSchemaSelect(id: string) {
+  const handleSchemaSelect = useCallback((id: string) => {
     switchSchema(id);
     setSchemaOpen(false);
     setShowResults(false);
     setResults([]);
-  }
+  }, []);
 
-  function handleCopyOutput() {
+  const handleCopyOutput = useCallback(() => {
     navigator.clipboard.writeText(outputCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-  }
+  }, [outputCode]);
 
-  function handleSave() {
+  const handleSave = useCallback(() => {
     const name = prompt("Give this query a name:", `Query ${new Date().toLocaleTimeString()}`);
     if (!name?.trim()) return;
     saveToHistory(root, name.trim());
     setSavedPresets(loadHistory());
     setSaveMsg("Saved!");
     setTimeout(() => setSaveMsg(""), 2000);
-  }
+  }, [root]);
 
-  function handleDeletePreset(id: string, e: React.MouseEvent) {
+  const handleDeletePreset = useCallback((id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     deleteFromHistory(id);
     setSavedPresets(loadHistory());
-  }
+  }, []);
 
-  function handleLoadPreset(entry: HistoryEntry) {
+  const handleLoadPreset = useCallback((entry: HistoryEntry) => {
     importTree(entry.tree);
     setShowResults(false);
     setResults([]);
-  }
+  }, [importTree]);
 
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+  const handleImport = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
@@ -153,7 +153,7 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
       alert(err instanceof Error ? err.message : "Import failed");
     }
     e.target.value = "";
-  }
+  }, [importTree]);
 
   return (
     <div className="h-screen bg-white dark:bg-[#0f1117] flex flex-col overflow-hidden">
@@ -327,6 +327,10 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
             <ToolbarBtn onClick={() => exportQueryJSON(root)} icon={<Download size={13} />} label="Export" />
             <ToolbarBtn onClick={() => fileInputRef.current?.click()} icon={<Upload size={13} />} label="Import" />
             <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleImport} />
+
+            <div className="ml-auto">
+              <ShortcutsHelp />
+            </div>
           </div>
 
           {/* Query Builder */}
@@ -346,7 +350,7 @@ export function WorkspaceClient({ workspaceId, initialSchemaId, workspaceName = 
 
           {/* Results Panel */}
           {showResults && (
-            <div className="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d27]" style={{ height: "280px" }}>
+            <div className="shrink-0 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1d27] animate-slide-up" style={{ height: "280px" }}>
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Results</span>
